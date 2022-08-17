@@ -4,9 +4,9 @@ import GameExampleAbstract.GameCalculator;
 import GameExampleAbstract.KidGameCalculator;
 import GenericsExample.MyList;
 import InterfaceExample.ClientManager;
-import InterfaceExample.IClientDal;
-import InterfaceExample.MySQLClientDal;
 import InterfaceExample.OracleClientDal;
+import JDBCExample.Buyer;
+import JDBCExample.DbHelper;
 import LoanExample.*;
 import LogExample.*;
 import RepositoryDesignPatternExample.Client;
@@ -19,44 +19,16 @@ import ThrowExample.BalanceInsufficientException;
 import WorkingWithFileExample.FileManager;
 
 import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class Main {
+
+
     public static void main(String[] args)  {
-        //------Working With Files------
-        FileManager fileManager = new FileManager();
-        //Instead of creating an object we can call these methods directly via class name.
-        FileManager.readFile();
-
-        fileManager.createFile();
-        fileManager.getFileInfo();
-        fileManager.readFile();
-        //fileManager.writeFile();
-        fileManager.writeFile2();
-        fileManager.readFile();
-
-        //------Generics------
-        MyList<String> stringMyList = new MyList<String>();
-        stringMyList.add("Ankara");
-        MyList<Integer> integerMyList = new MyList<>();
-        integerMyList.add(5);
-
-        //Generic Method example in Constants class with constant method.
-        Constants  constants = new Constants();
-        constants.constants(new Client());
-
-        //------Threads------
-
-        StopwatchThread stopwatchThread1 = new StopwatchThread("thread1");
-        StopwatchThread stopwatchThread2 = new StopwatchThread("thread2");
-        StopwatchThread stopwatchThread3 = new StopwatchThread("thread3");
-
-        stopwatchThread1.start();
-        stopwatchThread2.start();
-        stopwatchThread3.start();
 
 
 
@@ -495,6 +467,57 @@ public class Main {
         System.out.println("Hesap = " +accountManager.getBalance());
 
     }
+
+    // In the below method, you can find code examples from lessons 21 to 23 ("Working With Files" to "Threading" included.)
+    public static void codesFromLessonsBetween21to23(){
+        //------Working With Files------
+        FileManager fileManager = new FileManager();
+        //Instead of creating an object we can call these methods directly via class name.
+        FileManager.readFile();
+
+        fileManager.createFile();
+        fileManager.getFileInfo();
+        fileManager.readFile();
+        //fileManager.writeFile();
+        fileManager.writeFile2();
+        fileManager.readFile();
+
+        //------Generics------
+        MyList<String> stringMyList = new MyList<String>();
+        stringMyList.add("Ankara");
+        MyList<Integer> integerMyList = new MyList<>();
+        integerMyList.add(5);
+
+        //Generic Method example in Constants class with constant method.
+        Constants  constants = new Constants();
+        constants.constants(new Client());
+
+        //------Threads------
+
+        StopwatchThread stopwatchThread1 = new StopwatchThread("thread1");
+        StopwatchThread stopwatchThread2 = new StopwatchThread("thread2");
+        StopwatchThread stopwatchThread3 = new StopwatchThread("thread3");
+
+        stopwatchThread1.start();
+        stopwatchThread2.start();
+        stopwatchThread3.start();
+    }
+
+    // In the below method, you can find code examples from lesson 24 (JDBC)
+    public static void codesFromLesson24(){
+
+        // Read Example
+        readSQL();
+
+        // Insert Example
+        insertSQL();
+
+        // Update Example
+        updateSQL();
+
+        // Delete Example
+        deleteSQL();
+    }
     public static  void findNumberInArray(){
         int[] numbers = new int[]{1,3,5,7,45,67};
         int numberToCheck = 7;
@@ -526,6 +549,138 @@ public class Main {
             sum+= number;
         }
         return sum;
+    }
+
+
+    public static  void readSQL(){
+
+        Connection connection =null;
+        DbHelper dbHelper = new DbHelper();
+        Statement statement = null;
+        ResultSet resultSet;
+        try {
+            connection = dbHelper.getConnection();
+            System.out.println("DB connection is created.");
+            statement = connection.createStatement();
+
+            // Select Example
+            resultSet = statement.executeQuery("select * from customers");
+            ArrayList<Buyer> buyersArrayList = new ArrayList<Buyer>();
+
+            while (resultSet.next()){
+                buyersArrayList.add(new Buyer(
+                        resultSet.getString("customerNumber"),
+                        resultSet.getString("customerName"),
+                        resultSet.getString("contactFirstName"),
+                        resultSet.getString("contactLastName"),
+                        resultSet.getString("phone")));
+
+                System.out.println(resultSet.getString("customerName"));
+            }
+            System.out.println(buyersArrayList.size());
+        }catch (SQLException exception){
+            exception.printStackTrace();
+        }finally {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                dbHelper.showErrorMessage(e);
+            }
+        }
+    }
+    public static  void insertSQL(){
+
+        Connection connection =null;
+        PreparedStatement preparedStatement = null;
+        DbHelper dbHelper = new DbHelper();
+        try {
+            connection = dbHelper.getConnection();
+            String sqlQuery = "INSERT INTO `classicmodels`.`productlines`\n" +
+                    "(`productLine`," +
+                    "`textDescription`," +
+                    "`htmlDescription`," +
+                    "`image`)" +
+                    "VALUES" +
+                    "(?," +
+                    "?," +
+                    "null," +
+                    "null);";
+            preparedStatement = connection.prepareStatement(sqlQuery);
+            preparedStatement.setString(1,"In University"); // For the first question mark
+            preparedStatement.setString(2,"Now we are in your university."); // For the second question mark
+
+            int result = preparedStatement.executeUpdate(); // returns how many row affected.
+            System.out.println("Record is added to DB" + result+ "row afffected.");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }finally {
+            try {
+                preparedStatement.close();
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+    }
+
+    public static  void updateSQL(){
+
+        Connection connection =null;
+        PreparedStatement preparedStatement = null;
+        DbHelper dbHelper = new DbHelper();
+
+        try {
+            connection = dbHelper.getConnection();
+            String sqlQuery = "UPDATE productlines SET textDescription = ? WHERE productLine = 'In Home'";
+            preparedStatement = connection.prepareStatement(sqlQuery);
+            preparedStatement.setString(1,"We will be in your home sooner you think");
+
+            int result = preparedStatement.executeUpdate(); // returns how many row affected.
+            System.out.println("Record is updated to DB" + result+ "row afffected.");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }finally {
+            try {
+                preparedStatement.close();
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+    }
+
+    public static void deleteSQL(){
+
+        Connection connection =null;
+        PreparedStatement preparedStatement = null;
+        DbHelper dbHelper = new DbHelper();
+
+        try {
+            connection = dbHelper.getConnection();
+            String sqlQuery = "DELETE FROM productlines  WHERE productLine = ?";
+            preparedStatement = connection.prepareStatement(sqlQuery);
+            preparedStatement.setString(1,"In University");
+            int result = preparedStatement.executeUpdate(); // returns how many row affected.
+            System.out.println("Record is updated to DB" + result+ " row afffected.");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }finally {
+            try {
+                preparedStatement.close();
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
     }
 
 }

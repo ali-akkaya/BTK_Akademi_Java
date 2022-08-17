@@ -12,7 +12,7 @@ public class DatabaseHelper {
         public static void update(){}
     }
 
-    public static class Connection {
+    public static class ConnectionToDatabase {
         public static void createConnection(){}
     }
 }
